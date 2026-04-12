@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personalizador de Registros · Farmácia</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root {
+  --verde: #1a6e52; --verde-claro: #e8f5ef; --verde-medio: #2d9e72;
+  --laranja: #e05a2b; --creme: #f7f5f0; --creme-escuro: #ede9e0;
+  --texto: #1a1a18; --texto-suave: #6b6860; --texto-muito-suave: #a8a59e;
+  --borda: #dedad2; --branco: #ffffff; --radius: 12px; --radius-lg: 20px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Outfit', sans-serif; background: var(--creme); color: var(--texto); min-height: 100vh; }
+.hero { background: var(--verde); padding: 3rem 2rem 5rem; text-align: center; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(255,255,255,0.02) 40px, rgba(255,255,255,0.02) 80px); }
+.hero-badge { display: inline-block; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.85); font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 16px; border-radius: 100px; margin-bottom: 1.25rem; }
+.hero h1 { font-family: 'Instrument Serif', serif; font-size: clamp(2rem, 5vw, 3rem); color: #fff; line-height: 1.15; margin-bottom: 0.75rem; position: relative; }
+.hero h1 em { font-style: italic; color: #a8e6c9; }
+.hero p { color: rgba(255,255,255,0.65); font-size: 15px; font-weight: 300; max-width: 420px; margin: 0 auto; line-height: 1.6; position: relative; }
+.card-wrapper { max-width: 680px; margin: -3rem auto 3rem; padding: 0 1.25rem; position: relative; z-index: 10; }
+.card { background: var(--branco); border-radius: var(--radius-lg); border: 1px solid var(--borda); box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04); overflow: hidden; }
+.secao { padding: 1.75rem 2rem; border-bottom: 1px solid var(--creme-escuro); }
+.secao:last-child { border-bottom: none; }
+.secao-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+.num { width: 28px; height: 28px; border-radius: 50%; background: var(--verde); color: #fff; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.secao-titulo { font-size: 14px; font-weight: 600; color: var(--texto); }
+.secao-desc { font-size: 13px; color: var(--texto-suave); line-height: 1.55; margin-bottom: 1.1rem; padding-left: 40px; }
+.upload-logo { margin-left: 40px; border: 1.5px dashed var(--borda); border-radius: var(--radius); padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--creme); display: block; }
+.upload-logo:hover { border-color: var(--verde-medio); background: var(--verde-claro); }
+.upload-logo input { display: none; }
+.upload-logo-icon { width: 40px; height: 40px; background: var(--verde-claro); border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; }
+.upload-logo-icon svg { width: 20px; height: 20px; stroke: var(--verde); fill: none; stroke-width: 1.5; }
+.upload-logo p { font-size: 13px; color: var(--texto-suave); }
+.upload-logo p strong { color: var(--texto); }
+.upload-logo small { font-size: 11px; color: var(--texto-muito-suave); display: block; margin-top: 4px; }
+.logo-preview { margin-left: 40px; display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: var(--verde-claro); border-radius: var(--radius); border: 1px solid #b8e0cc; }
+.logo-preview img { width: 48px; height: 48px; object-fit: contain; border-radius: 8px; background: #fff; }
+.logo-preview-info { flex: 1; }
+.logo-preview-nome { font-size: 13px; font-weight: 500; color: var(--verde); }
+.logo-preview-size { font-size: 11px; color: #4a9a6e; margin-top: 2px; }
+.btn-remover { font-size: 12px; color: var(--laranja); background: none; border: none; cursor: pointer; font-family: inherit; }
+.campos { margin-left: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.campo { display: flex; flex-direction: column; gap: 5px; }
+.campo.full { grid-column: 1 / -1; }
+.campo label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texto-muito-suave); }
+.campo input { height: 40px; padding: 0 13px; border: 1px solid var(--borda); border-radius: 9px; font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--texto); background: var(--creme); outline: none; transition: border-color 0.15s, background 0.15s; }
+.campo input:focus { border-color: var(--verde-medio); background: #fff; }
+.campo input::placeholder { color: var(--texto-muito-suave); }
+.upload-docs { margin-left: 40px; border: 1.5px dashed var(--borda); border-radius: var(--radius); padding: 1.25rem 1.5rem; cursor: pointer; text-align: center; transition: all 0.2s; background: var(--creme); display: block; }
+.upload-docs:hover { border-color: var(--verde-medio); background: var(--verde-claro); }
+.upload-docs input { display: none; }
+.upload-docs p { font-size: 13px; color: var(--texto-suave); }
+.upload-docs p strong { color: var(--texto); }
+.upload-docs small { font-size: 11px; color: var(--texto-muito-suave); display: block; margin-top: 3px; }
+.lista-docs { margin-left: 40px; margin-top: 10px; display: flex; flex-direction: column; gap: 5px; max-height: 180px; overflow-y: auto; }
+.doc-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--creme); border-radius: 8px; border: 1px solid var(--creme-escuro); }
+.doc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--verde-medio); flex-shrink: 0; }
+.doc-nome { font-size: 13px; color: var(--texto); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-badge { font-size: 10px; font-weight: 600; color: var(--verde); background: var(--verde-claro); padding: 2px 7px; border-radius: 100px; flex-shrink: 0; }
+.badge-count { font-size: 11px; font-weight: 600; color: var(--verde); background: var(--verde-claro); padding: 2px 9px; border-radius: 100px; margin-left: 6px; }
+.card-footer { padding: 1.5rem 2rem; background: var(--creme); border-top: 1px solid var(--creme-escuro); }
+.btn-gerar { width: 100%; height: 52px; border-radius: var(--radius); background: var(--verde); border: none; color: #fff; font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: 0.01em; }
+.btn-gerar:hover:not(:disabled) { background: #145940; }
+.btn-gerar:active:not(:disabled) { transform: scale(0.99); }
+.btn-gerar:disabled { background: var(--borda); color: var(--texto-muito-suave); cursor: not-allowed; }
+.btn-gerar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+.progresso-wrap { margin-top: 1rem; display: none; }
+.progresso-label { font-size: 12px; color: var(--texto-suave); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progresso-barra { height: 5px; background: var(--creme-escuro); border-radius: 100px; overflow: hidden; }
+.progresso-fill { height: 100%; background: var(--verde-medio); border-radius: 100px; width: 0%; transition: width 0.3s ease; }
+.alerta { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: var(--radius); display: none; }
+.alerta-ok { background: var(--verde-claro); border: 1px solid #b8e0cc; }
+.alerta-ok .alerta-titulo { font-size: 14px; font-weight: 600; color: var(--verde); margin-bottom: 3px; }
+.alerta-ok .alerta-desc { font-size: 13px; color: #2d6e4a; }
+.alerta-erro { background: #fdf0eb; border: 1px solid #f5c4a8; }
+.alerta-erro .alerta-titulo { font-size: 14px; font-weight: 600; color: var(--laranja); margin-bottom: 3px; }
+.alerta-erro .alerta-desc { font-size: 13px; color: #b84c22; }
+.footer { text-align: center; padding: 1.5rem; font-size: 12px; color: var(--texto-muito-suave); }
+.info-box { margin-left: 40px; background: var(--creme); border: 1px solid var(--creme-escuro); border-radius: var(--radius); padding: 10px 14px; font-size: 12px; color: var(--texto-suave); line-height: 1.6; }
+.info-box strong { color: var(--texto); }
+@media (max-width: 520px) {
+  .hero { padding: 2rem 1.25rem 4rem; }
+  .secao { padding: 1.5rem 1.25rem; }
+  .card-footer { padding: 1.25rem; }
+  .campos { grid-template-columns: 1fr; margin-left: 0; }
+  .secao-desc { padding-left: 0; }
+  .upload-logo, .upload-docs, .lista-docs, .logo-preview, .info-box { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hero-badge">Modelos de Registros · Manipulação</div>
+  <h1>Personalize seus<br><em>registros</em> com um clique</h1>
+  <p>Insira a logo e os dados básicos — o app atualiza o cabeçalho de todos os registros de uma vez.</p>
+</div>
+<div class="card-wrapper">
+  <div class="card">
+
+    <!-- SEÇÃO 1: LOGO -->
+    <div class="secao">
+      <div class="secao-header"><div class="num">1</div><div class="secao-titulo">Logo da farmácia</div></div>
+      <p class="secao-desc">Será inserida no lugar do placeholder em todos os cabeçalhos.</p>
+      <div id="logo-area">
+        <label class="upload-logo">
+          <input type="file" id="logo-input" accept="image/png,image/jpeg,image/jpg" onchange="handleLogo(this)">
+          <div class="upload-logo-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 5"/></svg></div>
+          <p><strong>Clique para enviar</strong> sua logo</p>
+          <small>PNG recomendado · fundo transparente fica melhor</small>
+        </label>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 2: DADOS -->
+    <div class="secao">
+      <div class="secao-header"><div class="num">2</div><div class="secao-titulo">Dados do cabeçalho</div></div>
+      <p class="secao-desc">Apenas os campos comuns a todos os registros. Código do documento, setor e datas de preenchimento ficam para uso manual.</p>
+      <div class="campos">
+        <div class="campo full"><label>Nome da farmácia</label><input type="text" id="f-nome" placeholder="Ex: Farmácia Vida Natural"></div>
+        <div class="campo"><label>Versão</label><input type="text" id="f-versao" value="1.0" placeholder="1.0"></div>
+        <div class="campo"><label>Data de revisão</label><input type="text" id="f-revisao" placeholder="dd/mm/aaaa"></div>
+      </div>
+      <div style="height: 12px;"></div>
+      <div class="info-box">
+        <strong>Ficam para preenchimento manual:</strong> Identificação do Doc. (código único por arquivo), Setor e Mês/Ano quando aplicável.
+      </div>
+    </div>
+
+    <!-- SEÇÃO 3: ARQUIVOS -->
+    <div class="secao">
+      <div class="secao-header"><div class="num">3</div><div class="secao-titulo">Registros do kit <span class="badge-count" id="count-badge">0</span></div></div>
+      <p class="secao-desc">Selecione todos os arquivos .docx de uma só vez (Ctrl+A para selecionar todos).</p>
+      <label class="upload-docs">
+        <input type="file" id="docs-input" accept=".docx" multiple onchange="handleDocs(this)">
+        <p><strong>Clique para selecionar</strong> os arquivos .docx</p>
+        <small>Selecione todos de uma vez · sem limite de quantidade</small>
+      </label>
+      <div class="lista-docs" id="lista-docs"></div>
+    </div>
+
+    <!-- FOOTER / BOTÃO -->
+    <div class="card-footer">
+      <button class="btn-gerar" id="btn-gerar" disabled onclick="gerar()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Personalizar e baixar todos os registros
+      </button>
+      <div class="progresso-wrap" id="progresso-wrap">
+        <div class="progresso-label"><span id="progresso-texto">Processando...</span><span id="progresso-pct">0%</span></div>
+        <div class="progresso-barra"><div class="progresso-fill" id="progresso-fill"></div></div>
+      </div>
+      <div class="alerta alerta-ok" id="alerta-ok">
+        <div class="alerta-titulo">Registros prontos!</div>
+        <div class="alerta-desc">O download do .zip iniciou automaticamente. Seus registros estão personalizados e prontos para uso.</div>
+      </div>
+      <div class="alerta alerta-erro" id="alerta-erro">
+        <div class="alerta-titulo">Erro ao processar</div>
+        <div class="alerta-desc" id="alerta-erro-msg">Tente novamente.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">Os arquivos são processados localmente no seu navegador · nenhum dado é enviado para servidores</div>
+
+<script>
+let logoFile = null, logoArrayBuffer = null, logoExt = 'png';
+let docFiles = [];
+
+function handleLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  logoFile = file;
+  logoExt = file.name.split('.').pop().toLowerCase();
+  const reader = new FileReader();
+  reader.onload = () => {
+    const url = URL.createObjectURL(file);
+    document.getElementById('logo-area').innerHTML = `
+      <div class="logo-preview">
+        <img src="${url}" alt="logo">
+        <div class="logo-preview-info">
+          <div class="logo-preview-nome">${file.name}</div>
+          <div class="logo-preview-size">${(file.size/1024).toFixed(0)} KB</div>
+        </div>
+        <button class="btn-remover" onclick="removerLogo()">Remover</button>
+      </div>`;
+  };
+  reader.readAsDataURL(file);
+  checkReady();
+}
+
+function removerLogo() {
+  logoFile = null; logoArrayBuffer = null;
+  document.getElementById('logo-area').innerHTML = `
+    <label class="upload-logo">
+      <input type="file" id="logo-input" accept="image/png,image/jpeg,image/jpg" onchange="handleLogo(this)">
+      <div class="upload-logo-icon"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--verde);fill:none;stroke-width:1.5;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 5"/></svg></div>
+      <p><strong>Clique para enviar</strong> sua logo</p>
+      <small>PNG recomendado · fundo transparente fica melhor</small>
+    </label>`;
+  checkReady();
+}
+
+function handleDocs(input) {
+  docFiles = Array.from(input.files);
+  document.getElementById('count-badge').textContent = docFiles.length;
+  document.getElementById('lista-docs').innerHTML = docFiles.map(f => `
+    <div class="doc-item">
+      <div class="doc-dot"></div>
+      <span class="doc-nome">${f.name}</span>
+      <span class="doc-badge">DOCX</span>
+    </div>`).join('');
+  checkReady();
+}
+
+function checkReady() {
+  document.getElementById('btn-gerar').disabled = docFiles.length === 0;
+}
+
+function setProgresso(pct, texto) {
+  document.getElementById('progresso-fill').style.width = pct + '%';
+  document.getElementById('progresso-pct').textContent = Math.round(pct) + '%';
+  document.getElementById('progresso-texto').textContent = texto;
+}
+
+// ─────────────────────────────────────────────────────────
+// NÚCLEO: substituição por parágrafo (resolve runs fragmentados)
+// ─────────────────────────────────────────────────────────
+
+function escaparXML(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+
+function textoDoBloco(bloco) {
+  const matches = bloco.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
+  return matches.map(m => m.replace(/<w:t[^>]*>/, '').replace(/<\/w:t>/, '')).join('');
+}
+
+function substituirNoParagrafo(paraXml, de, paraVal) {
+  const reEsc = de.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const texto = textoDoBloco(paraXml).trim();
+  if (!new RegExp(reEsc).test(texto)) return null;
+
+  const textoSemEspacos = texto.trim();
+  const placeholderBase = de.replace(/:$/, '').trim();
+  const ehPlaceholderExato = (
+    textoSemEspacos === de ||
+    textoSemEspacos === de + ':' ||
+    textoSemEspacos === placeholderBase ||
+    textoSemEspacos === placeholderBase + ':'
+  );
+
+  if (!ehPlaceholderExato && textoSemEspacos.length > de.length + 10) return null;
+
+  const novoTexto = texto.replace(new RegExp(reEsc, 'g'), paraVal);
+  let primeiro = true;
+  return paraXml.replace(/<w:t([^>]*)>([^<]*)<\/w:t>/g, (match, attrs, _) => {
+    if (primeiro) {
+      primeiro = false;
+      const space = novoTexto !== novoTexto.trim() ? ' xml:space="preserve"' : '';
+      return `<w:t${space}>${escaparXML(novoTexto)}</w:t>`;
+    }
+    return `<w:t></w:t>`;
+  });
+}
+
+function substituirNoXML(xmlStr, mapa) {
+  const entradas = Object.entries(mapa)
+    .filter(([k, v]) => k && v)
+    .sort((a, b) => b[0].length - a[0].length);
+
+  return xmlStr.replace(/(<w:p[ >][\s\S]*?<\/w:p>)/g, (para) => {
+    for (const [de, paraVal] of entradas) {
+      const tentativa = substituirNoParagrafo(para, de, paraVal);
+      if (tentativa !== null) return tentativa;
+    }
+    return para;
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+// Substituição de imagem
+// ─────────────────────────────────────────────────────────
+
+async function substituirImagem(zip, docXml, novaImagemAB, novaExt) {
+  const blips = [...docXml.matchAll(/r:embed="(rId\d+)"/g)].map(m => m[1]);
+  if (!blips.length) return;
+
+  const freq = {};
+  for (const id of blips) freq[id] = (freq[id] || 0) + 1;
+  const logoRid = Object.entries(freq).sort((a,b) => b[1]-a[1])[0][0];
+
+  const relsXml = await zip.file('word/_rels/document.xml.rels').async('string');
+  const matchRel = relsXml.match(new RegExp(`Id="${logoRid}"[^>]+Target="([^"]+)"`));
+  if (!matchRel) return;
+
+  const imgPath = 'word/' + matchRel[1];
+  if (!zip.file(imgPath)) return;
+
+  zip.file(imgPath, novaImagemAB);
+
+  const ctFile = zip.file('[Content_Types].xml');
+  if (ctFile) {
+    let ctXml = await ctFile.async('string');
+    const mime = (novaExt === 'jpg' || novaExt === 'jpeg') ? 'image/jpeg' : 'image/png';
+    const ext = novaExt === 'jpg' ? 'jpeg' : novaExt;
+    if (!ctXml.includes(`Extension="${ext}"`)) {
+      ctXml = ctXml.replace('</Types>', `<Default Extension="${ext}" ContentType="${mime}"/></Types>`);
+      zip.file('[Content_Types].xml', ctXml);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// Processa um único .docx
+// ─────────────────────────────────────────────────────────
+
+async function processarDocx(fileAB, mapa, logoAB, logoExt) {
+  const zip = await JSZip.loadAsync(fileAB);
+
+  const alvos = Object.keys(zip.files).filter(n =>
+    n.match(/^word\/(document|header\d*|footer\d*)\.xml$/)
+  );
+
+  const docXml = await zip.file('word/document.xml').async('string');
+
+  if (logoAB) {
+    await substituirImagem(zip, docXml, logoAB, logoExt);
+  }
+
+  for (const alvo of alvos) {
+    let xml = await zip.file(alvo).async('string');
+    xml = substituirNoXML(xml, mapa);
+    zip.file(alvo, xml);
+  }
+
+  return await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
+}
+
+// ─────────────────────────────────────────────────────────
+// Botão principal
+// ─────────────────────────────────────────────────────────
+
+async function gerar() {
+  document.getElementById('alerta-ok').style.display = 'none';
+  document.getElementById('alerta-erro').style.display = 'none';
+
+  const btn = document.getElementById('btn-gerar');
+  btn.disabled = true;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;animation:spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg> Processando...`;
+  if (!document.getElementById('spin-style')) {
+    const s = document.createElement('style');
+    s.id = 'spin-style';
+    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+
+  document.getElementById('progresso-wrap').style.display = 'block';
+  setProgresso(2, 'Iniciando...');
+
+  try {
+    const g = id => document.getElementById(id).value.trim();
+
+    // Mapa de substituições — apenas os campos dos registros
+    const mapa = {};
+
+    if (g('f-nome')) {
+      mapa['Nome da Sua Farmácia Aqui'] = g('f-nome');
+      mapa['NOME DA SUA FARMÁCIA AQUI'] = g('f-nome').toUpperCase();
+      mapa['Nome da Farmácia'] = g('f-nome');
+      mapa['(Nome da Farmácia)'] = g('f-nome');
+    }
+    if (g('f-versao')) {
+      // Substitui apenas o valor "1.0" dentro do campo Versão
+      // O campo é "Versão: 1.0" — preserva o label, troca só o valor
+      mapa['**Versão**: 1.0'] = '**Versão**: ' + g('f-versao');
+      // Para o XML real (sem markdown):
+      mapa['Versão: 1.0'] = 'Versão: ' + g('f-versao');
+      mapa['Versão:1.0'] = 'Versão: ' + g('f-versao');
+    }
+    if (g('f-revisao')) {
+      mapa['Data de revisão:'] = 'Data de revisão: ' + g('f-revisao');
+      mapa['Data de revisão'] = 'Data de revisão: ' + g('f-revisao');
+    }
+
+    let logoAB = null;
+    if (logoFile) logoAB = await logoFile.arrayBuffer();
+
+    const zipSaida = new JSZip();
+    const total = docFiles.length;
+
+    for (let i = 0; i < total; i++) {
+      const file = docFiles[i];
+      setProgresso(5 + (i / total) * 88, `Processando: ${file.name}`);
+      const ab = await file.arrayBuffer();
+      try {
+        const resultado = await processarDocx(ab, mapa, logoAB, logoExt);
+        zipSaida.file(file.name, resultado, {binary: true});
+      } catch(e) {
+        zipSaida.file('[original] ' + file.name, ab, {binary: true});
+      }
+      await new Promise(r => setTimeout(r, 8));
+    }
+
+    setProgresso(96, 'Gerando arquivo .zip...');
+    const blob = await zipSaida.generateAsync({
+      type: 'blob',
+      compression: 'DEFLATE',
+      encodeFileName: (name) => new TextEncoder().encode(name)
+    });
+    setProgresso(100, 'Concluído!');
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'registros_personalizados.zip'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+    document.getElementById('alerta-ok').style.display = 'block';
+  } catch(e) {
+    document.getElementById('alerta-erro-msg').textContent = e.message || 'Erro desconhecido.';
+    document.getElementById('alerta-erro').style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar novamente`;
+  }
+}
+
+// Sugere data de revisão: 1 ano à frente
+const proxAno = new Date(); proxAno.setFullYear(proxAno.getFullYear() + 1);
+document.getElementById('f-revisao').placeholder = proxAno.toLocaleDateString('pt-BR');
+</script>
+</body>
+</html>
