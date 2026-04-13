@@ -427,9 +427,17 @@ async function gerar() {
   }
 }
 
-// Sugere data de revisão: 1 ano à frente
-const proxAno = new Date(); proxAno.setFullYear(proxAno.getFullYear() + 1);
-document.getElementById('f-revisao').placeholder = proxAno.toLocaleDateString('pt-BR');
+// Placeholder: data atual
+document.getElementById('f-revisao').placeholder = new Date().toLocaleDateString('pt-BR');
+
+// Máscara automática dd/mm/aaaa
+document.getElementById('f-revisao').addEventListener('input', function(e) {
+  let v = this.value.replace(/\D/g, ''); // só números
+  if (v.length > 8) v = v.slice(0, 8);
+  if (v.length > 4) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4);
+  else if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2);
+  this.value = v;
+});
 </script>
 </body>
 </html>
